@@ -30,10 +30,21 @@ export const AuctionCard: React.FC<AuctionCardProps> = ({
   const isWinning = item.currentBidder === userId;
   const nextBidAmount = item.currentBid + 10;
 
-  // Check if auction has ended
+  // Check if auction has ended (runs when auctionEndTime changes or on mount)
   useEffect(() => {
-    const serverTime = socketService.getServerTime();
-    setIsEnded(serverTime >= item.auctionEndTime);
+    const checkEnded = () => {
+      const serverTime = socketService.getServerTime();
+      const ended = serverTime >= item.auctionEndTime;
+      setIsEnded(ended);
+    };
+
+    // Check immediately
+    checkEnded();
+
+    // Also check periodically in case we missed the exact moment
+    const interval = setInterval(checkEnded, 1000);
+
+    return () => clearInterval(interval);
   }, [item.auctionEndTime]);
 
   // Trigger green flash when bid updates

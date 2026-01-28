@@ -22,6 +22,11 @@ export const CountdownTimer: React.FC<CountdownTimerProps> = ({ endTime, onExpir
 
       setTimeRemaining(remaining);
 
+      // If auction has time remaining, reset expired state (handles reset)
+      if (remaining > 0 && hasExpired) {
+        setHasExpired(false);
+      }
+
       if (remaining === 0 && !hasExpired) {
         setHasExpired(true);
         onExpire?.();

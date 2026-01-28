@@ -93,9 +93,14 @@ export const Dashboard: React.FC = () => {
 
     // Listen for all auctions reset (coordinated reset)
     socketService.onAllAuctionsReset((resetItems: AuctionItem[]) => {
-      console.log('All auctions reset!', resetItems);
-      // Update all items with reset data
-      setItems(resetItems);
+      console.log('All auctions reset! Count:', resetItems.length);
+      resetItems.forEach(item => {
+        const timeUntilEnd = item.auctionEndTime - Date.now();
+        console.log(`${item.title}: ${Math.floor(timeUntilEnd / 60000)} minutes`);
+      });
+
+      // Force complete state reset by creating new array
+      setItems([...resetItems]);
       setAllAuctionsEnded(false);
       setGlobalRestartCountdown(null);
       showNotification('All auctions have been reset!', 'info');
