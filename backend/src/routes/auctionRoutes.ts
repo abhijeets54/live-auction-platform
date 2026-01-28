@@ -92,5 +92,29 @@ export class AuctionRoutes {
         timestamp: Date.now()
       });
     });
+
+    /**
+     * POST /reset-auctions
+     * Manually reset all auctions (for demo purposes)
+     */
+    this.router.post('/reset-auctions', (_req: Request, res: Response) => {
+      try {
+        const resetItems = this.auctionManager.resetAllAuctions();
+        logger.info('All auctions manually reset via API');
+
+        res.json({
+          success: true,
+          message: 'All auctions have been reset',
+          data: resetItems,
+          serverTime: Date.now()
+        });
+      } catch (error) {
+        logger.error('Error resetting auctions:', error);
+        res.status(500).json({
+          success: false,
+          message: 'Internal server error'
+        });
+      }
+    });
   }
 }

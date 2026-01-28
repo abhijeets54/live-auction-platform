@@ -215,7 +215,32 @@ export class AuctionManager {
   }
 
   /**
-   * Reset an auction (for testing purposes)
+   * Auto-reset expired auctions to keep demo active
+   * Returns array of reset auction items
+   */
+  public autoResetExpiredAuctions(): AuctionItem[] {
+    const now = Date.now();
+    const resetItems: AuctionItem[] = [];
+
+    this.items.forEach((item, id) => {
+      // If auction ended more than 5 seconds ago, reset it
+      if (now >= item.auctionEndTime + 5000) {
+        item.currentBid = item.startingPrice;
+        item.currentBidder = null;
+        // Reset with random time between 3-8 minutes
+        const randomMinutes = Math.floor(Math.random() * 6) + 3;
+        item.auctionEndTime = now + (randomMinutes * 60000);
+
+        logger.info(`Auto-reset auction: ${item.title} with ${randomMinutes} minutes`);
+        resetItems.push({ ...item });
+      }
+    });
+
+    return resetItems;
+  }
+
+  /**
+   * Reset an auction manually
    */
   public resetAuction(itemId: string): boolean {
     const item = this.items.get(itemId);
@@ -226,5 +251,26 @@ export class AuctionManager {
     item.auctionEndTime = Date.now() + 300000; // Reset to 5 minutes
 
     return true;
+  }
+
+  /**
+   * Reset all auctions manually
+   */
+  public resetAllAuctions(): AuctionItem[] {
+    const resetItems: AuctionItem[] = [];
+    const now = Date.now();
+
+    this.items.forEach((item) => {
+      item.currentBid = item.startingPrice;
+      item.currentBidder = null;
+      // Random time between 3-8 minutes
+      const randomMinutes = Math.floor(Math.random() * 6) + 3;
+      item.auctionEndTime = now + (randomMinutes * 60000);
+
+      resetItems.push({ ...item });
+    });
+
+    logger.info('All auctions manually reset');
+    return resetItems;
   }
 }

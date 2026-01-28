@@ -96,6 +96,14 @@ class SocketService {
   }
 
   /**
+   * Subscribe to auction reset notifications
+   */
+  onAuctionReset(callback: (item: AuctionItem) => void): void {
+    if (!this.socket) return;
+    this.socket.on('AUCTION_RESET', callback);
+  }
+
+  /**
    * Disconnect socket
    */
   disconnect(): void {

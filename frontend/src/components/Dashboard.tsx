@@ -83,6 +83,16 @@ export const Dashboard: React.FC = () => {
       });
     });
 
+    // Listen for auction reset (auto-restart after 5 seconds)
+    socketService.onAuctionReset((resetItem: AuctionItem) => {
+      setItems(prevItems =>
+        prevItems.map(item =>
+          item.id === resetItem.id ? resetItem : item
+        )
+      );
+      console.log(`Auction "${resetItem.title}" has been reset`);
+    });
+
     return () => {
       socketService.removeAllListeners();
     };

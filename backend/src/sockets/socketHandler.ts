@@ -73,10 +73,11 @@ export class SocketHandler {
 
   /**
    * Monitor auctions and notify clients when they end
-   * Only notifies once per auction to prevent spam
+   * Auto-resets auctions 5 seconds after they end to keep demo active
    */
   private startAuctionMonitoring(): void {
     this.auctionCheckInterval = setInterval(() => {
+      // Check for newly expired auctions
       const expiredAuctions = this.auctionManager.getExpiredAuctions();
 
       expiredAuctions.forEach(itemId => {
@@ -86,6 +87,16 @@ export class SocketHandler {
           this.io.emit('AUCTION_ENDED', itemId);
           this.notifiedEndedAuctions.add(itemId);
         }
+      });
+
+      // Auto-reset expired auctions (5 seconds after they end)
+      const resetItems = this.auctionManager.autoResetExpiredAuctions();
+
+      resetItems.forEach(item => {
+        logger.info(`Broadcasting reset for item: ${item.title}`);
+        this.io.emit('AUCTION_RESET', item);
+        // Remove from notified set so it can end again
+        this.notifiedEndedAuctions.delete(item.id);
       });
     }, 1000); // Check every second
   }
