@@ -1,635 +1,362 @@
-# School Platform API
+# Live Auction Platform
 
-A robust REST API built with Node.js, Express, TypeScript, and MongoDB featuring JWT authentication, role-based access control, and Stripe payment integration.
+A real-time auction platform where users compete to buy items in the final seconds. Built with Node.js, Socket.io, React, and TypeScript.
 
 ## Features
 
-- **User Authentication**
-  - User registration with email validation
-  - Secure login with JWT tokens
-  - Password hashing with bcrypt
-  - Token-based session management
+### Backend (Node.js + Socket.io)
+- **REST API**: Get auction items with real-time data
+- **Real-Time Socket Events**: Instant bid updates using Socket.io
+- **Race Condition Handling**: Queue-based system ensures only one bid wins when multiple users bid simultaneously
+- **Server Time Synchronization**: Prevents client-side timer manipulation
+- **Comprehensive Logging**: Winston logger for production-ready monitoring
+- **Health Checks**: Built-in health check endpoints
 
-- **Role-Based Access Control**
-  - Two user roles: `User` and `Admin`
-  - Protected routes with authorization middleware
-  - Role-specific endpoints
+### Frontend (React + TypeScript)
+- **Responsive Dashboard**: Grid layout displaying all auction items
+- **Live Countdown Timers**: Server-synced timers that can't be hacked
+- **Visual Feedback**:
+  - Green flash animation when new bids are placed
+  - "Winning" badge for the highest bidder
+  - Red "Outbid" notification when outbid
+- **Real-Time Updates**: Instant price updates across all connected clients
+- **Modern UI**: Built with Tailwind CSS
 
-- **Payment Integration**
-  - Stripe payment processing
-  - Payment intent creation
-  - Transaction tracking and history
-  - Refund management (Admin only)
-  - Payment status monitoring
+### Infrastructure
+- **Docker Support**: Complete Docker setup with multi-stage builds
+- **Production-Ready**: Optimized builds, health checks, and logging
+- **Easy Deployment**: One-command deployment with docker-compose
 
-- **Security**
-  - Helmet.js for security headers
-  - Rate limiting to prevent abuse
-  - CORS configuration
-  - Input validation with express-validator
-  - Password encryption
+## Technology Stack
 
-- **Database**
-  - MongoDB with Mongoose ODM
-  - Indexed queries for performance
-  - Transaction tracking
-  - User management
+### Backend
+- Node.js 20
+- TypeScript
+- Express.js
+- Socket.io
+- Winston (logging)
+- Docker
 
-## Tech Stack
+### Frontend
+- React 18
+- TypeScript
+- Vite
+- Socket.io Client
+- Axios
+- Tailwind CSS
+- React Icons
 
-- **Runtime:** Node.js
-- **Framework:** Express.js
-- **Language:** TypeScript
-- **Database:** MongoDB (Mongoose)
-- **Authentication:** JWT (jsonwebtoken)
-- **Payment:** Stripe
-- **Validation:** express-validator
-- **Security:** Helmet, bcrypt, rate-limit
+## Getting Started
 
-## Prerequisites
-
-- Node.js (v16 or higher)
-- MongoDB (local or Atlas)
-- Stripe account (for payment integration)
+### Prerequisites
+- Node.js 20+ (for local development)
+- Docker & Docker Compose (for containerized deployment)
 - npm or yarn
 
-## Installation
+### Option 1: Docker Deployment (Recommended)
 
-1. **Clone the repository**
+1. Clone the repository:
 ```bash
-git clone <your-repo-url>
-cd backend-task
+git clone <repository-url>
+cd task
 ```
 
-2. **Install dependencies**
+2. Build and start the containers:
+```bash
+docker-compose up --build
+```
+
+3. Access the application:
+   - Frontend: http://localhost:3000
+   - Backend API: http://localhost:3001/api
+   - Health Check: http://localhost:3001/api/health
+
+### Option 2: Local Development
+
+#### Backend Setup
+
+1. Navigate to the backend directory:
+```bash
+cd backend
+```
+
+2. Install dependencies:
 ```bash
 npm install
 ```
 
-3. **Environment Setup**
-
-Create a `.env` file in the root directory:
+3. Copy the environment file:
 ```bash
 cp .env.example .env
 ```
 
-Update the `.env` file with your credentials:
-```env
-PORT=5000
-NODE_ENV=development
-MONGODB_URI=mongodb://localhost:27017/school-platform
-JWT_SECRET=your_super_secret_jwt_key_here
-JWT_EXPIRE=7d
-STRIPE_SECRET_KEY=sk_test_your_stripe_secret_key
-STRIPE_PUBLISHABLE_KEY=pk_test_your_stripe_publishable_key
-CLIENT_URL=http://localhost:3000
-```
-
-4. **Start MongoDB**
-
-If using local MongoDB:
-```bash
-mongod
-```
-
-Or use MongoDB Atlas connection string in `.env`
-
-5. **Run the application**
-
-Development mode with hot reload:
+4. Start the development server:
 ```bash
 npm run dev
 ```
 
-Production build:
+The backend will be running at http://localhost:3001
+
+#### Frontend Setup
+
+1. Navigate to the frontend directory:
 ```bash
-npm run build
-npm start
+cd frontend
 ```
 
-The server will start at `http://localhost:5000`
-
-## API Documentation
-
-### Base URL
-```
-http://localhost:5000/api
-```
-
-### Response Format
-All responses follow this structure:
-```json
-{
-  "success": true/false,
-  "message": "Response message",
-  "data": { /* Response data */ }
-}
-```
-
----
-
-## Authentication Endpoints
-
-### 1. Register User
-**POST** `/api/auth/register`
-
-Create a new user account.
-
-**Request Body:**
-```json
-{
-  "name": "John Doe",
-  "email": "john@example.com",
-  "password": "password123",
-  "role": "user"  // optional: "user" or "admin" (default: "user")
-}
-```
-
-**Response (201):**
-```json
-{
-  "success": true,
-  "message": "User registered successfully",
-  "data": {
-    "user": {
-      "id": "65abc123...",
-      "name": "John Doe",
-      "email": "john@example.com",
-      "role": "user"
-    },
-    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-  }
-}
-```
-
-### 2. Login
-**POST** `/api/auth/login`
-
-Authenticate a user and receive a JWT token.
-
-**Request Body:**
-```json
-{
-  "email": "john@example.com",
-  "password": "password123"
-}
-```
-
-**Response (200):**
-```json
-{
-  "success": true,
-  "message": "Login successful",
-  "data": {
-    "user": {
-      "id": "65abc123...",
-      "name": "John Doe",
-      "email": "john@example.com",
-      "role": "user"
-    },
-    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-  }
-}
-```
-
-### 3. Get Current User
-**GET** `/api/auth/me`
-
-Get the currently authenticated user's information.
-
-**Headers:**
-```
-Authorization: Bearer <your-jwt-token>
-```
-
-**Response (200):**
-```json
-{
-  "success": true,
-  "data": {
-    "id": "65abc123...",
-    "name": "John Doe",
-    "email": "john@example.com",
-    "role": "user"
-  }
-}
-```
-
----
-
-## Payment Endpoints
-
-All payment endpoints require authentication via JWT token.
-
-### 1. Create Payment Intent
-**POST** `/api/payments/create-payment-intent`
-
-Create a new payment intent with Stripe.
-
-**Headers:**
-```
-Authorization: Bearer <your-jwt-token>
-Content-Type: application/json
-```
-
-**Request Body:**
-```json
-{
-  "amount": 50.00,
-  "currency": "usd",
-  "description": "Course enrollment payment",
-  "metadata": {
-    "courseId": "course123",
-    "semester": "Fall 2024"
-  }
-}
-```
-
-**Response (201):**
-```json
-{
-  "success": true,
-  "message": "Payment intent created successfully",
-  "data": {
-    "clientSecret": "pi_abc123_secret_def456",
-    "transactionId": "65xyz789...",
-    "paymentIntentId": "pi_abc123"
-  }
-}
-```
-
-### 2. Confirm Payment
-**POST** `/api/payments/confirm/:transactionId`
-
-Confirm a payment with a payment method.
-
-**Headers:**
-```
-Authorization: Bearer <your-jwt-token>
-```
-
-**Request Body:**
-```json
-{
-  "paymentMethodId": "pm_card_visa"
-}
-```
-
-**Response (200):**
-```json
-{
-  "success": true,
-  "message": "Payment succeeded",
-  "data": {
-    "transaction": { /* transaction details */ },
-    "paymentStatus": "succeeded"
-  }
-}
-```
-
-### 3. Get My Transactions
-**GET** `/api/payments/transactions`
-
-Get all transactions for the authenticated user.
-
-**Headers:**
-```
-Authorization: Bearer <your-jwt-token>
-```
-
-**Response (200):**
-```json
-{
-  "success": true,
-  "count": 5,
-  "data": [
-    {
-      "_id": "65xyz789...",
-      "user": {
-        "name": "John Doe",
-        "email": "john@example.com"
-      },
-      "amount": 50,
-      "currency": "USD",
-      "status": "completed",
-      "description": "Course enrollment payment",
-      "createdAt": "2024-01-15T10:30:00.000Z"
-    }
-  ]
-}
-```
-
-### 4. Get Transaction by ID
-**GET** `/api/payments/transactions/:id`
-
-Get a specific transaction by ID (accessible by transaction owner or admin).
-
-**Headers:**
-```
-Authorization: Bearer <your-jwt-token>
-```
-
-**Response (200):**
-```json
-{
-  "success": true,
-  "data": {
-    "_id": "65xyz789...",
-    "user": { /* user details */ },
-    "amount": 50,
-    "status": "completed",
-    "description": "Course enrollment payment"
-  }
-}
-```
-
-### 5. Get All Transactions (Admin Only)
-**GET** `/api/payments/transactions/all`
-
-Get all transactions in the system with pagination and filtering.
-
-**Headers:**
-```
-Authorization: Bearer <admin-jwt-token>
-```
-
-**Query Parameters:**
-- `status` (optional): Filter by status (pending, completed, failed, refunded)
-- `page` (optional): Page number (default: 1)
-- `limit` (optional): Items per page (default: 10)
-
-**Example:**
-```
-GET /api/payments/transactions/all?status=completed&page=1&limit=20
-```
-
-**Response (200):**
-```json
-{
-  "success": true,
-  "count": 20,
-  "total": 150,
-  "page": 1,
-  "pages": 8,
-  "data": [ /* array of transactions */ ]
-}
-```
-
-### 6. Refund Transaction (Admin Only)
-**POST** `/api/payments/refund/:transactionId`
-
-Refund a completed transaction.
-
-**Headers:**
-```
-Authorization: Bearer <admin-jwt-token>
-```
-
-**Response (200):**
-```json
-{
-  "success": true,
-  "message": "Transaction refunded successfully",
-  "data": {
-    "transaction": { /* updated transaction */ },
-    "refund": { /* Stripe refund details */ }
-  }
-}
-```
-
----
-
-## Testing the API
-
-### Using cURL
-
-**1. Register a user:**
+2. Install dependencies:
 ```bash
-curl -X POST http://localhost:5000/api/auth/register \
-  -H "Content-Type: application/json" \
-  -d '{
-    "name": "John Doe",
-    "email": "john@example.com",
-    "password": "password123"
-  }'
+npm install
 ```
 
-**2. Login:**
+3. Copy the environment file:
 ```bash
-curl -X POST http://localhost:5000/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{
-    "email": "john@example.com",
-    "password": "password123"
-  }'
+cp .env.example .env
 ```
 
-**3. Create a payment (replace TOKEN):**
+4. Start the development server:
 ```bash
-curl -X POST http://localhost:5000/api/payments/create-payment-intent \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
-  -d '{
-    "amount": 50.00,
-    "currency": "usd",
-    "description": "Test payment"
-  }'
+npm run dev
 ```
 
-### Using Postman
-
-1. Import the collection from the `postman` folder (if available)
-2. Set up environment variables for `baseUrl` and `token`
-3. Run requests in the following order:
-   - Register → Login → Save token → Make payment requests
-
----
+The frontend will be running at http://localhost:3000
 
 ## Project Structure
 
 ```
-backend-task/
-├── src/
-│   ├── config/
-│   │   └── database.ts          # MongoDB connection
-│   ├── controllers/
-│   │   ├── authController.ts    # Authentication logic
-│   │   └── paymentController.ts # Payment logic
-│   ├── middleware/
-│   │   ├── auth.ts              # JWT & role-based auth
-│   │   ├── errorHandler.ts      # Global error handling
-│   │   └── validator.ts         # Input validation rules
-│   ├── models/
-│   │   ├── User.ts              # User model & schema
-│   │   └── Transaction.ts       # Transaction model & schema
-│   ├── routes/
-│   │   ├── authRoutes.ts        # Authentication routes
-│   │   └── paymentRoutes.ts     # Payment routes
-│   └── server.ts                # Application entry point
-├── .env.example                 # Environment variables template
-├── .gitignore
-├── package.json
-├── tsconfig.json
-└── README.md
+task/
+├── backend/
+│   ├── src/
+│   │   ├── services/
+│   │   │   └── AuctionManager.ts     # Core auction logic with race condition handling
+│   │   ├── sockets/
+│   │   │   └── socketHandler.ts      # Socket.io event handlers
+│   │   ├── routes/
+│   │   │   └── auctionRoutes.ts      # REST API routes
+│   │   ├── types/
+│   │   │   └── index.ts              # TypeScript interfaces
+│   │   ├── utils/
+│   │   │   └── logger.ts             # Winston logger configuration
+│   │   └── server.ts                 # Main server file
+│   ├── Dockerfile
+│   ├── package.json
+│   └── tsconfig.json
+│
+├── frontend/
+│   ├── src/
+│   │   ├── components/
+│   │   │   ├── Dashboard.tsx         # Main dashboard component
+│   │   │   ├── AuctionCard.tsx       # Individual auction item card
+│   │   │   └── CountdownTimer.tsx    # Server-synced countdown timer
+│   │   ├── services/
+│   │   │   ├── socketService.ts      # Socket.io client service
+│   │   │   └── apiService.ts         # REST API client
+│   │   ├── hooks/
+│   │   │   └── useUserId.ts          # User identification hook
+│   │   ├── types/
+│   │   │   └── index.ts              # TypeScript interfaces
+│   │   ├── App.tsx
+│   │   └── main.tsx
+│   ├── Dockerfile
+│   ├── nginx.conf
+│   ├── package.json
+│   └── vite.config.ts
+│
+└── docker-compose.yml
 ```
 
----
+## Key Features Explained
 
-## Error Handling
+### 1. Race Condition Handling
 
-The API returns appropriate HTTP status codes and error messages:
+The backend uses a queue-based system to handle concurrent bids:
 
-- `200` - Success
-- `201` - Created
-- `400` - Bad Request (validation errors)
-- `401` - Unauthorized (missing or invalid token)
-- `403` - Forbidden (insufficient permissions)
-- `404` - Not Found
-- `500` - Internal Server Error
-
-**Error Response Example:**
-```json
-{
-  "success": false,
-  "message": "Validation failed",
-  "errors": [
-    {
-      "field": "email",
-      "message": "Please provide a valid email"
-    }
-  ]
-}
-```
-
----
-
-## Security Features
-
-- **Password Hashing:** Passwords are hashed using bcrypt before storage
-- **JWT Authentication:** Stateless authentication with secure tokens
-- **Rate Limiting:** 100 requests per 10 minutes per IP
-- **Helmet:** Security headers to protect against common vulnerabilities
-- **CORS:** Configurable cross-origin resource sharing
-- **Input Validation:** All inputs are validated and sanitized
-- **Role-Based Access:** Different permissions for User and Admin roles
-
----
-
-## Database Models
-
-### User Schema
 ```typescript
-{
-  name: String,
-  email: String (unique, lowercase),
-  password: String (hashed),
-  role: Enum ['user', 'admin'],
-  createdAt: Date,
-  updatedAt: Date
+// From AuctionManager.ts
+public async processBid(bidRequest: BidRequest): Promise<BidResponse> {
+  const currentQueue = this.bidQueues.get(itemId) || Promise.resolve();
+
+  const bidPromise = currentQueue.then(async () => {
+    return this.executeBid(itemId, bidAmount, userId, username);
+  });
+
+  this.bidQueues.set(itemId, bidPromise);
+  return bidPromise;
 }
 ```
 
-### Transaction Schema
+When two users bid at the exact same millisecond:
+1. Both bids enter the queue
+2. The first bid is processed and accepted
+3. The second bid is processed but rejected with "BID_TOO_LOW" error
+4. The second user receives an immediate "Outbid" notification
+
+### 2. Server Time Synchronization
+
+The countdown timer uses server time to prevent client-side manipulation:
+
 ```typescript
-{
-  user: ObjectId (ref: User),
-  amount: Number,
-  currency: String,
-  status: Enum ['pending', 'completed', 'failed', 'refunded'],
-  stripePaymentIntentId: String,
-  stripePaymentMethodId: String,
-  description: String,
-  metadata: Object,
-  createdAt: Date,
-  updatedAt: Date
+// From CountdownTimer.tsx
+const serverTime = socketService.getServerTime();
+const remaining = Math.max(0, endTime - serverTime);
+```
+
+The client syncs with server time on connection and calculates the offset:
+
+```typescript
+// From socketService.ts
+private async syncServerTime(): Promise<void> {
+  this.socket.emit('REQUEST_SERVER_TIME', (response: ServerTimeResponse) => {
+    const clientTime = Date.now();
+    this.serverTimeOffset = response.serverTime - clientTime;
+  });
 }
 ```
 
----
+### 3. Real-Time Visual Feedback
 
-## Stripe Testing
+- **Green Flash**: Triggered on `UPDATE_BID` socket event
+- **Winning Badge**: Shown when `item.currentBidder === userId`
+- **Outbid Notification**: Triggered on `OUTBID` socket event
 
-Use Stripe test cards for payment testing:
+## API Endpoints
 
-- **Success:** `4242 4242 4242 4242`
-- **Decline:** `4000 0000 0000 0002`
-- **Requires Authentication:** `4000 0025 0000 3155`
+### REST API
 
-**Test Card Details:**
-- Expiry: Any future date (e.g., 12/34)
-- CVC: Any 3 digits (e.g., 123)
-- ZIP: Any 5 digits (e.g., 12345)
+- `GET /api/items` - Get all auction items
+- `GET /api/items/:id` - Get a specific auction item
+- `GET /api/server-time` - Get current server time
+- `GET /api/health` - Health check endpoint
 
----
+### Socket Events
 
-## Deployment
+#### Client to Server
+- `BID_PLACED` - Place a bid
+- `REQUEST_SERVER_TIME` - Request server time for synchronization
 
-### Environment Variables for Production
+#### Server to Client
+- `UPDATE_BID` - Broadcast when a new bid is placed
+- `OUTBID` - Notify when a user is outbid
+- `AUCTION_ENDED` - Notify when an auction ends
 
-```env
-NODE_ENV=production
-MONGODB_URI=<your-production-mongodb-uri>
-JWT_SECRET=<strong-random-secret>
-STRIPE_SECRET_KEY=<live-stripe-key>
-CLIENT_URL=<your-frontend-url>
-```
+## Testing the Application
 
-### Build for Production
+### Test Race Condition Handling
 
+1. Open two browser windows side by side
+2. Both windows should show the same auction item
+3. Click the bid button on both windows simultaneously
+4. Observe that only one bid succeeds
+5. The second user receives an "Outbid" error immediately
+
+### Test Server Time Synchronization
+
+1. Open the browser developer console
+2. Try to manipulate the countdown timer using JavaScript
+3. The timer will continue to use server time, preventing manipulation
+
+### Test Visual Feedback
+
+1. **Green Flash**: Place a bid and watch the price flash green
+2. **Winning Badge**: The highest bidder sees a "Winning" badge
+3. **Outbid Notification**: When outbid, a red notification appears
+
+## Production Deployment
+
+### Building for Production
+
+#### Backend
 ```bash
+cd backend
 npm run build
 npm start
 ```
 
----
+#### Frontend
+```bash
+cd frontend
+npm run build
+npm run preview
+```
 
-## Development Highlights
+### Docker Production Deployment
 
-This API demonstrates:
+The Docker setup uses multi-stage builds for optimized production images:
 
-✅ **Clean Architecture** - Organized MVC pattern with separation of concerns
-✅ **TypeScript** - Type-safe code with interfaces and strict typing
-✅ **Security Best Practices** - JWT, bcrypt, helmet, rate limiting
-✅ **Error Handling** - Comprehensive error messages and validation
-✅ **Database Design** - Optimized schemas with indexes
-✅ **Payment Integration** - Full Stripe payment flow
-✅ **Role-Based Access** - Granular permissions system
-✅ **Production Ready** - Environment configs, logging, error handling
+```bash
+docker-compose up -d
+```
 
----
+To view logs:
+```bash
+docker-compose logs -f
+```
 
-## Author
+To stop:
+```bash
+docker-compose down
+```
 
-**Abhijeet Singh**
+## Environment Variables
 
-- Portfolio: https://abhijeets-portfolio.vercel.app
-- GitHub: https://github.com/abhijeets54
-- Email: abhijeet@example.com
+### Backend (.env)
+```env
+PORT=3001
+NODE_ENV=production
+FRONTEND_URL=http://localhost:3000
+LOG_LEVEL=info
+```
 
----
+### Frontend (.env)
+```env
+VITE_API_URL=http://localhost:3001/api
+VITE_SOCKET_URL=http://localhost:3001
+```
+
+## Code Quality
+
+### Backend
+- **TypeScript Strict Mode**: Full type safety
+- **Modular Architecture**: Separation of concerns (services, routes, sockets)
+- **Error Handling**: Comprehensive try-catch blocks with logging
+- **Logging**: Winston logger with different log levels
+
+### Frontend
+- **TypeScript**: Full type safety across components
+- **React Best Practices**: Hooks, functional components
+- **Clean Code**: Modular components with single responsibilities
+- **Performance**: Optimized re-renders, memoization where needed
+
+## Performance Considerations
+
+- **Queue-based bid processing**: Prevents race conditions without locks
+- **WebSocket connections**: Real-time updates without polling
+- **Server time sync**: Single sync on connection, then client-side calculation
+- **Optimized Docker images**: Multi-stage builds reduce image size
+- **Nginx caching**: Static assets cached for performance
+
+## Security Features
+
+- **CORS Configuration**: Controlled cross-origin requests
+- **Input Validation**: All bid requests validated
+- **Server Time Authority**: Prevents client-side timer manipulation
+- **Health Checks**: Monitor application health
+- **Security Headers**: Nginx configured with security headers
+
+## Future Enhancements
+
+- User authentication with JWT
+- Persistent database (PostgreSQL/MongoDB)
+- Payment integration
+- Email notifications
+- Bid history
+- Admin dashboard
+- Mobile app
 
 ## License
 
-ISC
+MIT
 
----
+## Author
 
-## Notes for Reviewers
-
-This API was built as a technical assessment for the Junior Backend Developer Intern position. It demonstrates:
-
-1. **Strong fundamentals** in Node.js and Express
-2. **Real-world payment integration** with Stripe
-3. **Security consciousness** with multiple layers of protection
-4. **Clean, maintainable code** with TypeScript
-5. **Production-ready features** like error handling, validation, and rate limiting
-
-The codebase is designed to be easily extensible for additional features like:
-- Email notifications
-- Password reset functionality
-- Two-factor authentication
-- Webhook handlers for Stripe events
-- Advanced analytics and reporting
-- Course management endpoints
-
-Thank you for reviewing my submission!
+Built for internship assessment - demonstrating production-ready code quality, real-time features, and Docker infrastructure.
