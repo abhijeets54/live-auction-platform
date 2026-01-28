@@ -2,6 +2,14 @@
 
 A real-time auction platform where users compete to buy items in the final seconds. Built with Node.js, Socket.io, React, and TypeScript.
 
+## 🚀 Live Demo
+
+- **Frontend**: https://live-auction-platform-production-a145.up.railway.app
+- **Backend API**: https://live-auction-platform-production.up.railway.app/api
+- **Health Check**: https://live-auction-platform-production.up.railway.app/api/health
+
+**Try it now!** Open the frontend URL and start bidding. Open multiple tabs to see real-time updates across all clients.
+
 ## Features
 
 ### Backend (Node.js + Socket.io)
@@ -9,17 +17,22 @@ A real-time auction platform where users compete to buy items in the final secon
 - **Real-Time Socket Events**: Instant bid updates using Socket.io
 - **Race Condition Handling**: Queue-based system ensures only one bid wins when multiple users bid simultaneously
 - **Server Time Synchronization**: Prevents client-side timer manipulation
+- **Auto-Reset Auctions**: Auctions automatically restart 30 seconds after ending (perfect for demos!)
 - **Comprehensive Logging**: Winston logger for production-ready monitoring
 - **Health Checks**: Built-in health check endpoints
+- **Manual Reset API**: Endpoint to manually reset all auctions
 
 ### Frontend (React + TypeScript)
 - **Responsive Dashboard**: Grid layout displaying all auction items
 - **Live Countdown Timers**: Server-synced timers that can't be hacked
+- **Restart Countdown**: Shows "Restarting in Xs" after auction ends
 - **Visual Feedback**:
   - Green flash animation when new bids are placed
   - "Winning" badge for the highest bidder
   - Red "Outbid" notification when outbid
+  - Blue restart countdown after auction ends
 - **Real-Time Updates**: Instant price updates across all connected clients
+- **Auto-Refresh**: Seamless auction resets keep the demo always active
 - **Modern UI**: Built with Tailwind CSS
 
 ### Infrastructure
@@ -227,6 +240,7 @@ private async syncServerTime(): Promise<void> {
 - `GET /api/items/:id` - Get a specific auction item
 - `GET /api/server-time` - Get current server time
 - `GET /api/health` - Health check endpoint
+- `POST /api/reset-auctions` - Manually reset all auctions (returns all reset items)
 
 ### Socket Events
 
@@ -238,8 +252,60 @@ private async syncServerTime(): Promise<void> {
 - `UPDATE_BID` - Broadcast when a new bid is placed
 - `OUTBID` - Notify when a user is outbid
 - `AUCTION_ENDED` - Notify when an auction ends
+- `AUCTION_RESET` - Notify when an auction automatically resets (after 30 seconds)
+
+## How Auction Auto-Reset Works
+
+The platform features an automatic auction restart system to keep the demo always active:
+
+### Auction Lifecycle
+
+1. **Active Auction** (3-8 minutes)
+   - Random duration between 3-8 minutes per auction
+   - Users can place bids
+   - Countdown timer shows time remaining
+
+2. **Auction Ends**
+   - Timer reaches 0
+   - Bidding disabled
+   - Winner determined
+
+3. **Restart Countdown** (30 seconds)
+   - Shows "Restarting in Xs" in blue
+   - Gives users time to see the final results
+   - Countdown updates every second
+
+4. **Auto-Reset**
+   - After 30 seconds, auction automatically resets
+   - All bids cleared, price returns to starting price
+   - New random duration assigned (3-8 minutes)
+   - Auction becomes active again
+
+5. **Cycle Repeats**
+   - Process repeats indefinitely
+   - Demo stays active 24/7
+   - Perfect for recruiters to test anytime!
+
+### Manual Reset
+
+You can also manually reset all auctions instantly:
+
+```bash
+curl -X POST https://your-backend-url/api/reset-auctions
+```
+
+Or simply restart the backend service on Railway.
 
 ## Testing the Application
+
+### Test Auto-Reset Feature
+
+1. Wait for an auction to end (or set short timers for testing)
+2. Observe "ENDED" status displayed
+3. Watch restart countdown: "Restarting in 30s, 29s, 28s..."
+4. After 30 seconds, auction resets automatically
+5. New countdown timer appears with fresh duration
+6. All bids cleared, ready to bid again
 
 ### Test Race Condition Handling
 
@@ -260,26 +326,49 @@ private async syncServerTime(): Promise<void> {
 1. **Green Flash**: Place a bid and watch the price flash green
 2. **Winning Badge**: The highest bidder sees a "Winning" badge
 3. **Outbid Notification**: When outbid, a red notification appears
+4. **Restart Countdown**: Wait for auction to end, see blue "Restarting in Xs"
 
 ## Production Deployment
 
-### Building for Production
+### Railway Deployment (Recommended)
 
-#### Backend
-```bash
-cd backend
-npm run build
-npm start
-```
+This project is configured for easy deployment on Railway:
 
-#### Frontend
-```bash
-cd frontend
-npm run build
-npm run preview
-```
+1. **Push to GitHub**
+   ```bash
+   git push origin main
+   ```
 
-### Docker Production Deployment
+2. **Connect to Railway**
+   - Go to [railway.app](https://railway.app)
+   - Create new project
+   - Deploy backend and frontend as separate services
+
+3. **Backend Service**
+   - Root Directory: `backend`
+   - Uses Dockerfile automatically
+   - Environment Variables:
+     ```
+     NODE_ENV=production
+     PORT=3001
+     FRONTEND_URL=<your-frontend-url>
+     LOG_LEVEL=info
+     ```
+
+4. **Frontend Service**
+   - Root Directory: `frontend`
+   - Uses Dockerfile automatically
+   - Environment Variables:
+     ```
+     VITE_API_URL=<your-backend-url>/api
+     VITE_SOCKET_URL=<your-backend-url>
+     ```
+
+5. **Generate Domains**
+   - Backend: Generate domain on port 3001
+   - Frontend: Generate domain on port 80
+
+### Local Docker Deployment
 
 The Docker setup uses multi-stage builds for optimized production images:
 
@@ -295,6 +384,22 @@ docker-compose logs -f
 To stop:
 ```bash
 docker-compose down
+```
+
+### Building for Production (Manual)
+
+#### Backend
+```bash
+cd backend
+npm run build
+npm start
+```
+
+#### Frontend
+```bash
+cd frontend
+npm run build
+npm run preview
 ```
 
 ## Environment Variables

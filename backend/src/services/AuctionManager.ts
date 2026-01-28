@@ -216,6 +216,7 @@ export class AuctionManager {
 
   /**
    * Auto-reset expired auctions to keep demo active
+   * Auctions reset 30 seconds after ending to allow users to see the results
    * Returns array of reset auction items
    */
   public autoResetExpiredAuctions(): AuctionItem[] {
@@ -223,8 +224,8 @@ export class AuctionManager {
     const resetItems: AuctionItem[] = [];
 
     this.items.forEach((item) => {
-      // If auction ended more than 5 seconds ago, reset it
-      if (now >= item.auctionEndTime + 5000) {
+      // If auction ended more than 30 seconds ago, reset it
+      if (now >= item.auctionEndTime + 30000) {
         item.currentBid = item.startingPrice;
         item.currentBidder = null;
         // Reset with random time between 3-8 minutes
