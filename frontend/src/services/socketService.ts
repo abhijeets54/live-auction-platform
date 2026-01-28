@@ -96,11 +96,27 @@ class SocketService {
   }
 
   /**
-   * Subscribe to auction reset notifications
+   * Subscribe to auction reset notifications (deprecated - use onAllAuctionsReset)
    */
   onAuctionReset(callback: (item: AuctionItem) => void): void {
     if (!this.socket) return;
     this.socket.on('AUCTION_RESET', callback);
+  }
+
+  /**
+   * Subscribe to global restart countdown updates
+   */
+  onRestartCountdown(callback: (data: { allAuctionsEnded: boolean; restartCountdown: number | null }) => void): void {
+    if (!this.socket) return;
+    this.socket.on('RESTART_COUNTDOWN', callback);
+  }
+
+  /**
+   * Subscribe to all auctions reset event (coordinated reset)
+   */
+  onAllAuctionsReset(callback: (items: AuctionItem[]) => void): void {
+    if (!this.socket) return;
+    this.socket.on('ALL_AUCTIONS_RESET', callback);
   }
 
   /**

@@ -73,11 +73,12 @@ export class SocketHandler {
 
   /**
    * Monitor auctions and notify clients when they end
-   * Auto-resets auctions 5 seconds after they end to keep demo active
+   * Broadcasts global restart countdown after all auctions end
+   * Auto-resets ALL auctions together 30 seconds after all have ended
    */
   private startAuctionMonitoring(): void {
     this.auctionCheckInterval = setInterval(() => {
-      // Check for newly expired auctions
+      // Check for newly expired individual auctions
       const expiredAuctions = this.auctionManager.getExpiredAuctions();
 
       expiredAuctions.forEach(itemId => {
@@ -89,15 +90,25 @@ export class SocketHandler {
         }
       });
 
-      // Auto-reset expired auctions (5 seconds after they end)
+      // Get global restart countdown status
+      const restartCountdown = this.auctionManager.getRestartCountdown();
+      const allEnded = this.auctionManager.areAllAuctionsEnded();
+
+      // Broadcast restart countdown to all clients
+      this.io.emit('RESTART_COUNTDOWN', {
+        allAuctionsEnded: allEnded,
+        restartCountdown: restartCountdown // null if not all ended, or milliseconds until restart
+      });
+
+      // Auto-reset ALL auctions together (30 seconds after all ended)
       const resetItems = this.auctionManager.autoResetExpiredAuctions();
 
-      resetItems.forEach(item => {
-        logger.info(`Broadcasting reset for item: ${item.title}`);
-        this.io.emit('AUCTION_RESET', item);
-        // Remove from notified set so it can end again
-        this.notifiedEndedAuctions.delete(item.id);
-      });
+      if (resetItems.length > 0) {
+        logger.info(`Broadcasting coordinated reset for all ${resetItems.length} items`);
+        this.io.emit('ALL_AUCTIONS_RESET', resetItems);
+        // Clear notified set so auctions can end again
+        this.notifiedEndedAuctions.clear();
+      }
     }, 1000); // Check every second
   }
 

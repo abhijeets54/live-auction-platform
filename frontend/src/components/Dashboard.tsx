@@ -16,6 +16,8 @@ export const Dashboard: React.FC = () => {
   const [biddingItemId, setBiddingItemId] = useState<string | null>(null);
   const [notification, setNotification] = useState<string | null>(null);
   const [isConnected, setIsConnected] = useState(false);
+  const [globalRestartCountdown, setGlobalRestartCountdown] = useState<number | null>(null);
+  const [allAuctionsEnded, setAllAuctionsEnded] = useState(false);
 
   const { userId, username } = useUserId();
 
@@ -83,14 +85,20 @@ export const Dashboard: React.FC = () => {
       });
     });
 
-    // Listen for auction reset (auto-restart after 5 seconds)
-    socketService.onAuctionReset((resetItem: AuctionItem) => {
-      setItems(prevItems =>
-        prevItems.map(item =>
-          item.id === resetItem.id ? resetItem : item
-        )
-      );
-      console.log(`Auction "${resetItem.title}" has been reset`);
+    // Listen for global restart countdown updates
+    socketService.onRestartCountdown((data) => {
+      setAllAuctionsEnded(data.allAuctionsEnded);
+      setGlobalRestartCountdown(data.restartCountdown);
+    });
+
+    // Listen for all auctions reset (coordinated reset)
+    socketService.onAllAuctionsReset((resetItems: AuctionItem[]) => {
+      console.log('All auctions reset!', resetItems);
+      // Update all items with reset data
+      setItems(resetItems);
+      setAllAuctionsEnded(false);
+      setGlobalRestartCountdown(null);
+      showNotification('All auctions have been reset!', 'info');
     });
 
     return () => {
@@ -199,6 +207,20 @@ export const Dashboard: React.FC = () => {
             }
           `}>
             {notification}
+          </div>
+        </div>
+      )}
+
+      {/* Global Restart Countdown Banner */}
+      {allAuctionsEnded && globalRestartCountdown !== null && (
+        <div className="bg-gradient-to-r from-blue-600 to-purple-600 py-6 shadow-lg">
+          <div className="container mx-auto px-4 text-center">
+            <h2 className="text-3xl font-bold text-white mb-2">
+              All Auctions Ended
+            </h2>
+            <p className="text-xl text-white font-semibold animate-pulse">
+              Restarting all auctions in {Math.ceil(globalRestartCountdown / 1000)} seconds...
+            </p>
           </div>
         </div>
       )}

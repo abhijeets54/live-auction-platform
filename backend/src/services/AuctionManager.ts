@@ -9,6 +9,7 @@ import { logger } from '../utils/logger';
 export class AuctionManager {
   private items: Map<string, AuctionItem> = new Map();
   private bidQueues: Map<string, Promise<any>> = new Map();
+  private allAuctionsEndTime: number | null = null; // Track when all auctions ended
 
   constructor() {
     this.initializeItems();
@@ -215,28 +216,78 @@ export class AuctionManager {
   }
 
   /**
-   * Auto-reset expired auctions to keep demo active
-   * Auctions reset 30 seconds after ending to allow users to see the results
-   * Returns array of reset auction items
+   * Check if all auctions have ended
    */
-  public autoResetExpiredAuctions(): AuctionItem[] {
+  public areAllAuctionsEnded(): boolean {
     const now = Date.now();
-    const resetItems: AuctionItem[] = [];
+    let allEnded = true;
 
     this.items.forEach((item) => {
-      // If auction ended more than 30 seconds ago, reset it
-      if (now >= item.auctionEndTime + 30000) {
-        item.currentBid = item.startingPrice;
-        item.currentBidder = null;
-        // Reset with random time between 3-8 minutes
-        const randomMinutes = Math.floor(Math.random() * 6) + 3;
-        item.auctionEndTime = now + (randomMinutes * 60000);
-
-        logger.info(`Auto-reset auction: ${item.title} with ${randomMinutes} minutes`);
-        resetItems.push({ ...item });
+      if (now < item.auctionEndTime) {
+        allEnded = false;
       }
     });
 
+    return allEnded;
+  }
+
+  /**
+   * Get the time remaining until all auctions restart (in milliseconds)
+   * Returns null if not all auctions have ended yet
+   */
+  public getRestartCountdown(): number | null {
+    const now = Date.now();
+
+    // Check if all auctions have ended
+    if (!this.areAllAuctionsEnded()) {
+      this.allAuctionsEndTime = null;
+      return null;
+    }
+
+    // Track when all auctions ended
+    if (this.allAuctionsEndTime === null) {
+      this.allAuctionsEndTime = now;
+      logger.info('All auctions have ended. Starting 30-second restart countdown.');
+    }
+
+    // Calculate time remaining until restart (30 seconds after all ended)
+    const restartTime = this.allAuctionsEndTime + 30000;
+    const timeRemaining = Math.max(0, restartTime - now);
+
+    return timeRemaining;
+  }
+
+  /**
+   * Auto-reset all auctions together after all have ended + 30 seconds
+   * Returns array of reset auction items, or empty array if not time to reset yet
+   */
+  public autoResetExpiredAuctions(): AuctionItem[] {
+    const restartCountdown = this.getRestartCountdown();
+
+    // If not all auctions ended, or countdown still running, don't reset yet
+    if (restartCountdown === null || restartCountdown > 0) {
+      return [];
+    }
+
+    // Time to reset all auctions!
+    const resetItems: AuctionItem[] = [];
+    const now = Date.now();
+
+    this.items.forEach((item) => {
+      item.currentBid = item.startingPrice;
+      item.currentBidder = null;
+      // Reset with random time between 3-8 minutes
+      const randomMinutes = Math.floor(Math.random() * 6) + 3;
+      item.auctionEndTime = now + (randomMinutes * 60000);
+
+      logger.info(`Auto-reset auction: ${item.title} with ${randomMinutes} minutes`);
+      resetItems.push({ ...item });
+    });
+
+    // Reset the tracking variable
+    this.allAuctionsEndTime = null;
+
+    logger.info('All auctions reset together!');
     return resetItems;
   }
 

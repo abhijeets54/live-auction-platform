@@ -9,11 +9,9 @@ interface CountdownTimerProps {
 /**
  * Server-synced countdown timer
  * Uses server time to prevent client-side manipulation
- * Shows restart countdown after auction ends
  */
 export const CountdownTimer: React.FC<CountdownTimerProps> = ({ endTime, onExpire }) => {
   const [timeRemaining, setTimeRemaining] = useState<number>(0);
-  const [restartCountdown, setRestartCountdown] = useState<number>(0);
   const [hasExpired, setHasExpired] = useState<boolean>(false);
 
   useEffect(() => {
@@ -24,19 +22,9 @@ export const CountdownTimer: React.FC<CountdownTimerProps> = ({ endTime, onExpir
 
       setTimeRemaining(remaining);
 
-      if (remaining === 0) {
-        // Calculate restart countdown (30 seconds after auction ends)
-        const timeSinceEnd = serverTime - endTime;
-        const restartIn = Math.max(0, 30000 - timeSinceEnd);
-        setRestartCountdown(restartIn);
-
-        if (!hasExpired) {
-          setHasExpired(true);
-          onExpire?.();
-        }
-      } else {
-        setHasExpired(false);
-        setRestartCountdown(0);
+      if (remaining === 0 && !hasExpired) {
+        setHasExpired(true);
+        onExpire?.();
       }
     };
 
@@ -67,18 +55,8 @@ export const CountdownTimer: React.FC<CountdownTimerProps> = ({ endTime, onExpir
     return 'text-gray-700';
   };
 
-  // Show restart countdown if auction has ended
-  if (hasExpired && restartCountdown > 0) {
-    const restartSeconds = Math.ceil(restartCountdown / 1000);
-    return (
-      <span className="text-blue-600 font-bold animate-pulse">
-        Restarting in {restartSeconds}s
-      </span>
-    );
-  }
-
   if (hasExpired) {
-    return <span className="text-blue-600 font-bold">Restarting...</span>;
+    return <span className="text-red-600 font-bold">ENDED</span>;
   }
 
   return (

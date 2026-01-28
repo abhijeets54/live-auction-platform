@@ -82,6 +82,30 @@ export class AuctionRoutes {
     });
 
     /**
+     * GET /restart-countdown
+     * Returns global restart countdown info
+     */
+    this.router.get('/restart-countdown', (_req: Request, res: Response) => {
+      try {
+        const restartCountdown = this.auctionManager.getRestartCountdown();
+        const allEnded = this.auctionManager.areAllAuctionsEnded();
+
+        res.json({
+          success: true,
+          allAuctionsEnded: allEnded,
+          restartCountdown: restartCountdown, // null if not all ended, or milliseconds until restart
+          serverTime: Date.now()
+        });
+      } catch (error) {
+        logger.error('Error getting restart countdown:', error);
+        res.status(500).json({
+          success: false,
+          message: 'Internal server error'
+        });
+      }
+    });
+
+    /**
      * GET /health
      * Health check endpoint
      */
