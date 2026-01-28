@@ -222,7 +222,7 @@ export class AuctionManager {
     const now = Date.now();
     const resetItems: AuctionItem[] = [];
 
-    this.items.forEach((item, id) => {
+    this.items.forEach((item) => {
       // If auction ended more than 5 seconds ago, reset it
       if (now >= item.auctionEndTime + 5000) {
         item.currentBid = item.startingPrice;
